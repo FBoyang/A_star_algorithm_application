@@ -9,6 +9,7 @@ def setup():
         for j in range(101):
             # Initialize each object
             if (i == 0 and j == 0) or (i == 100 and j == 100):
+                #Cell(x coor, y coor, if_blocked, if_visited)
                 grid[i][j] = Cell(i, j, False, True)
             else:
                 grid[i][j] = Cell(i, j, randomization())
@@ -49,6 +50,7 @@ def draw(windowSize=550, off=5):
             # if i == 0 and j == 0:
             #     color = 'red'
             canvas.setFill(color)
+            #draw cell_size * cell_size rectangle at point (offset_x + i * cell_size, offset_y + j * cell_size) 
             canvas.drawRect(offset_x + i * cell_size, offset_y + j * cell_size,
                             cell_size, cell_size)
     win.wait()
