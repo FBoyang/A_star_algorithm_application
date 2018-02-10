@@ -38,6 +38,7 @@ def draw(windowSize=1050, off=50):
     cell_size = off  # Height and width of checkerboard squares.
 
     grid = setup()
+    #start
 
     for i in range(31):  # Note that i ranges from 0 through 7, inclusive.
         for j in range(31):  # So does j.
@@ -67,4 +68,4 @@ class Cell:
         self.ifVisited = True
 
 
-draw()
+#draw()

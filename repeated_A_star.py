@@ -1,19 +1,111 @@
 import numpy as np
 from ezgraphics import GraphicsWindow
 import sys
-
+import heapq
+import class_infor.py
+import math
 
 size = 31
 #initialize the information matrix
 def setup_info():
 	grid = makeGrid()
-	grid[0][0] = node(0, 0, (size - 1) * 2, (size - 1) * 2)
-	grid[size - 1][size - 1] = node(size - 1, size -1, sys.maxint, 0)
+	grid[0][0] = node()
+	start = grid[0][0]
+	start.x = 0
+	start.y = 0
+	start.h = (size - 1) * 2
+	start.g = 0
 
-#update the information matrix
-def update_info():
+
+	grid[size - 1][size - 1] = node()
+	end =grid[size - 1][size - 1]
+	end.x = size - 1
+	end.y = size - 1
+	end.h = 0
+	end.g = sys.maxint
+	return grid
+
+def isValid(x, y):
+	return ((x >= 0) and (x < size) and (y >= 0) and (y < size))
+
+'''
+update the surrounding node of the current node s
+It takes 3 parameters: 
+Mazeinfor: the information matrix
+snode: the current stage node
+counter: the iteration time of the A* search
+
+Notice:
+currently I don't think we need to check counter, because I think there
+is no conditon in which g(succ(s, a) would be not bigger than g(s) + c(s, a)
+
+Please tell me if I am wrong, because I am probably wrong
+'''
+
+def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue):
+	xcoor = snode.x
+	ycoor = snode.y
+	#update left successor
+	if(isValid(xcoor - 1, ycoor)) :
+		#this is equal to check if succ(s, a) < counter
+		if(not isinstance(Mazeinfor[xcoor - 1][ycoor], node)):
+			Mazeinfor[xcoor -1][ycoor] = node()
+		successor = Mazeinfor[xcoor -1][ycoor]
+		if(not successor.isBlocked):
+			successor.parent = snode
+			successor.g = snode.g + 1
+			successor.x = xcoor - 1
+			successor.y = ycoor
+			successor.h = Manhattan(successor, s_goal)
+			successor.search = counter
+			heapq.push(Queue, successor)
 
 
+	#update right successor
+	
+	if(isValid(xcoor + 1, ycoor)):
+		if(not isinstance(Mazeinfor[xcoor + 1][ycoor], node)):
+			Mazeinfor[xcoor + 1][ycoor] = node()
+		successor = Mazeinfor[xcoor + 1][ycoor]
+		if(not successor.isBlocked):
+			successor.parent = snode
+			successor.parent = snode
+			successor.g = snode.g + 1
+			successor.xcoor = xcoor + 1
+			successor.ycoor = ycoor
+			successor.h = Manhattan(successor, s_goal)
+			successor.search = counter
+			heapq.push(Queue, successor)
+
+	#update downward successor
+	if(isValid(xcoor, ycoor - 1)):
+		if(not isinstance(Mazeinfor[xcoor][ycoor - 1], node)):
+			Mazeinfor[xcoor][ycoor - 1] = node()
+		successor = Mazeinfor[xcoor][ycoor - 1]
+		if(not successor.isBlocked):
+			successor.parent = snode
+			successor.g = snode.g + 1
+			successor.xcoor = xcoor
+			successor.ycoor = ycoor - 1
+			successor.h = Manhattan(successor, s_goal)
+			successor.search = counter
+			heapq.push(Queue, successor)
+
+	#update upward successor
+	if(isValid(xcoor, ycoor + 1)):
+		if(not isinstance(Mazeinfor[xcoor][ycoor + 1], node)):
+			Mazeinfor[xcoor][ycoor + 1] = node()
+		successor = Mazeinfor[xcoor][ycoor + 1]
+		if(not successor.isBlocked):
+			successor.parent = snode
+			successor.g = snode.g + 1
+			successor.xcoor = xcoor
+			successor.ycoor = ycoor + 1
+			successor.h = Manhattan(successor, s_goal)
+			successor.search = counter
+			heapq.push(Queue, successor)
+
+	
 
 # Make the grid, having the top left and bottom right block set to unblocked and seen
 def setup():
@@ -27,6 +119,43 @@ def setup():
             else:
                 grid[i][j] = Cell(i, j, randomization())
     return grid
+
+
+
+
+'''
+	detect function mimic the sensor detection, to be more specific, 
+	suppose the agent standing at the stage s, using the real word information
+	maze to update the surrounding information to map_info 
+'''
+
+def detect(s, maze, map_info):
+	xcoor = s.x
+	ycoor = s.y
+	if(isValid(xcoor - 1, ycoor)) :
+		#this is equal to check if succ(s, a) < counter
+		if(not isinstance(Mazeinfor[xcoor - 1][ycoor], node)):
+			Mazeinfor[xcoor -1][ycoor] = node()
+		successor = Mazeinfor[xcoor -1][ycoor]
+		successor.isBlocked = maze[xcoor -1][ycoor].ifBlocked
+
+	if(isValid(xcoor + 1, ycoor)):
+		if(not isinstance(Mazeinfor[xcoor + 1][ycoor], node)):
+			Mazeinfor[xcoor + 1][ycoor] = node()
+		successor = Mazeinfor[xcoor + 1][ycoor]
+		successor.isBlocked = maze[xcoor + 1][ycoor].ifBlocked
+
+	if(isValid(xcoor, ycoor - 1)):
+		if(not isinstance(Mazeinfor[xcoor][ycoor - 1], node)):
+			Mazeinfor[xcoor][ycoor - 1] = node()
+		successor = Mazeinfor[xcoor][ycoor - 1]
+		successor.isBlocked = maze[xcoor][ycoor - 1].ifBlocked
+
+	if(isValid(xcoor, ycoor + 1)):
+		if(not isinstance(Mazeinfor[xcoor][ycoor + 1], node)):
+			Mazeinfor[xcoor][ycoor + 1] = node()
+		successor = Mazeinfor[xcoor][ycoor + 1]
+		successor.isBlocked = maze[xcoor][ycoor + 1].ifBlocked
 
 
 # Return false for unblocked, true for blocked
@@ -70,7 +199,71 @@ def draw(windowSize=size * 50, off=50):
     win.wait()
 
 
+def Manhattan(start, goal):
+	return (abs(goal.x - start.x) + abs(goal.y - start.y))
 
+
+
+def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue):
+	#check whether queue is empty
+	while(len(Queue) > 0):
+		snode = heapq.heappop(Queue)
+		#update s's successors, executing step 5 to 13
+		surround_update(Maze ,Mazeinfor, snode, s_goal counter, Queue)
+
+
+
+def traceback(map_info):
+	#need to complete
+	return
+
+
+def take_action(track, maze):
+	#need to complete
+	return
+
+	
+
+def main():
+	#generate a random foggy map
+	maze = setup()
+
+	#generate a information map
+	map_info = setup_info()
+
+	counter = 0
+	#start from the begining, end at the goal stage
+	s_start = map_info[0][0]
+
+	#detect the block
+	detect(s_start, maze, map_info)
+	s_goal = map_info[size - 1][size - 1]
+
+	while not (s_start.x == s_goal.x and s_start.y == s_goal.y):
+		Queue = []
+		counter += 1
+		s_start.g = 0
+		s_start.search = counter
+		s_goal.search = counter
+		#push the start stage information to queue
+		s_start.h = Manhattan(s_start, s_goal)
+		heapq.push(Queue, s_start)
+		ComputePath(map_foggy, map_info, counter, s_goal, Queue)
+		if len(Queue) == 0:
+			print("I cannot reach the target.")
+			return
+
+
+		'''
+		follow the tree pointers from s_goal to s_start, use a linkedlist to record
+		the path, and then move the agent to the goal stage
+		''' 
+		track = traceback(map_info)
+
+		s_start = take_action(track, maze)
+
+		print("I reached the target")
+		return
 
 
 #draw()
@@ -78,11 +271,11 @@ def draw(windowSize=size * 50, off=50):
 
 
 
-#generate a random foggy map
-map_foggy = setup()
 
-#generate a information map
-map_info = setup_info()
+
+
+
+
 
 #
 
