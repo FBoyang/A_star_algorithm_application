@@ -2,8 +2,7 @@ import numpy as np
 from ezgraphics import GraphicsWindow
 import sys
 import heapq
-import class_infor.py
-import math
+from class_infor import *
 
 size = 31
 #initialize the information matrix
@@ -129,7 +128,7 @@ def setup():
 	maze to update the surrounding information to map_info 
 '''
 
-def detect(s, maze, map_info):
+def detect(s, maze, Mazeinfor):
 	xcoor = s.x
 	ycoor = s.y
 	if(isValid(xcoor - 1, ycoor)) :
@@ -209,7 +208,7 @@ def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue):
 	while(len(Queue) > 0):
 		snode = heapq.heappop(Queue)
 		#update s's successors, executing step 5 to 13
-		surround_update(Maze ,Mazeinfor, snode, s_goal counter, Queue)
+		surround_update(Maze ,Mazeinfor, snode, s_goal,counter, Queue)
 
 
 
@@ -249,6 +248,8 @@ def main():
 		s_start.h = Manhattan(s_start, s_goal)
 		heapq.push(Queue, s_start)
 		ComputePath(map_foggy, map_info, counter, s_goal, Queue)
+
+		## TODO Boyang, can you double check the variable above? --> map-foggy: undeclared
 		if len(Queue) == 0:
 			print("I cannot reach the target.")
 			return
@@ -278,6 +279,3 @@ def main():
 
 
 #
-
-
-
