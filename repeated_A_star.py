@@ -207,19 +207,50 @@ def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue):
 	#check whether queue is empty
 	while(len(Queue) > 0):
 		snode = heapq.heappop(Queue)
-		#update s's successors, executing step 5 to 13
-		surround_update(Maze ,Mazeinfor, snode, s_goal,counter, Queue)
+		if(snode.x == s_goal.x and snode.y == s_goal.y):
+			#update s's successors, executing step 5 to 13
+			surround_update(Maze ,Mazeinfor, snode, s_goal,counter, Queue)
 
 
+'''
+traceback function serves to record the current ideal path that the agent 
+estimate from the current position to the destination
 
-def traceback(map_info):
+In the form of a linked list
+'''
+def traceback(map_info, s_goal):
+	 
+	tracklist = node()
+	ptr = s_goal
+	#while ptr hasn't reach the start node
+	while(ptr.g != 0):
+		tracklist.addFront(ptr)
+		ptr = ptr.parent
+
+	tracklist.addFront(ptr)
+	return tracklist.next
+
+
+def take_action(track, maze, map_info):
+	ptr = track
+	x = ptr.x
+	y = ptr.y
+	position = None
+	if(map_info[x][y].g != 0):
+		print("wrong start point")
+		exit(0)
+	else:
+		#keep moving until 
+		while(ptr != None):
+			x = ptr.x
+			y = ptr.y
+			if(not map_info[x][y].isBlocked):
+				position = ptr
+			else:
+				break
+			ptr = ptr.next
 	#need to complete
-	return
-
-
-def take_action(track, maze):
-	#need to complete
-	return
+	return position
 
 	
 
@@ -261,7 +292,7 @@ def main():
 		''' 
 		track = traceback(map_info)
 
-		s_start = take_action(track, maze)
+		s_start = take_action(track, maze, map_info)
 
 		print("I reached the target")
 		return

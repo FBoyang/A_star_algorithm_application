@@ -22,6 +22,7 @@ class node:
 		self.g = 0
 		self.search = 0
 		self.parent = None
+		self.next = None
 		self.isBlocked = False
 
 
@@ -31,4 +32,9 @@ class node:
 
 	def __eq__(self, other):
 		return self.g + self.h == other.g + other.h
+
+	def addFront(self, node):
+		restlist = self.next
+		self.next = node
+		node.next = restlist
 
