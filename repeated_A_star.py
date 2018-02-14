@@ -41,11 +41,12 @@ is no conditon in which g(succ(s, a) would be not bigger than g(s) + c(s, a)
 Please tell me if I am wrong, because I am probably wrong
 '''
 
-def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue):
+def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, closelist):
 	xcoor = snode.x
 	ycoor = snode.y
 	#update left successor
-	if(isValid(xcoor - 1, ycoor)) :
+	if(isValid(xcoor - 1, ycoor) and (not closelist[xcoor - 1][ycoor])\
+		and (not Mazeinfor[xcoor - 1][ycoor].isBlocked)) :
 		#this is equal to check if succ(s, a) < counter
 		if(not isinstance(Mazeinfor[xcoor - 1][ycoor], node)):
 			Mazeinfor[xcoor -1][ycoor] = node()
@@ -62,7 +63,8 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue):
 
 	#update right successor
 	
-	if(isValid(xcoor + 1, ycoor)):
+	if(isValid(xcoor + 1, ycoor) and (not closelist[xcoor + 1][ycoor])\
+		(not Mazeinfor[xcoor + 1][ycoor].isBlocked)):
 		if(not isinstance(Mazeinfor[xcoor + 1][ycoor], node)):
 			Mazeinfor[xcoor + 1][ycoor] = node()
 		successor = Mazeinfor[xcoor + 1][ycoor]
@@ -77,7 +79,8 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue):
 			heapq.push(Queue, successor)
 
 	#update downward successor
-	if(isValid(xcoor, ycoor - 1)):
+	if(isValid(xcoor, ycoor - 1) and (not closelist[xcoor][ycoor - 1])\
+		(not Mazeinfor[xcoor][ycoor - 1].isBlocked)):
 		if(not isinstance(Mazeinfor[xcoor][ycoor - 1], node)):
 			Mazeinfor[xcoor][ycoor - 1] = node()
 		successor = Mazeinfor[xcoor][ycoor - 1]
@@ -91,7 +94,8 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue):
 			heapq.push(Queue, successor)
 
 	#update upward successor
-	if(isValid(xcoor, ycoor + 1)):
+	if(isValid(xcoor, ycoor + 1) and (not closelist[xcoor][ycoor + 1])\
+		(not Mazeinfor[xcoor][ycoor + 1].isBlocked)):
 		if(not isinstance(Mazeinfor[xcoor][ycoor + 1], node)):
 			Mazeinfor[xcoor][ycoor + 1] = node()
 		successor = Mazeinfor[xcoor][ycoor + 1]
@@ -203,13 +207,16 @@ def Manhattan(start, goal):
 
 
 
-def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue):
+def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue, closelist):
 	#check whether queue is empty
 	while(len(Queue) > 0):
 		snode = heapq.heappop(Queue)
+		xcoor = snode.x
+		ycoor = snode.y
+		closelist[xcoor][ycoor] = True
 		if(snode.x == s_goal.x and snode.y == s_goal.y):
 			#update s's successors, executing step 5 to 13
-			surround_update(Maze ,Mazeinfor, snode, s_goal,counter, Queue)
+			surround_update(Maze ,Mazeinfor, snode, s_goal,counter, Queue, closelist)
 
 
 '''
@@ -244,6 +251,7 @@ def take_action(track, maze, map_info):
 		while(ptr != None):
 			x = ptr.x
 			y = ptr.y
+			detect(map_info[x][y], maze, map_info)
 			if(not map_info[x][y].isBlocked):
 				position = ptr
 			else:
@@ -270,18 +278,19 @@ def main():
 	s_goal = map_info[size - 1][size - 1]
 
 	while not (s_start.x == s_goal.x and s_start.y == s_goal.y):
-		Queue = []
+		openlist = []
+		closelist = [[False for i in range(size)] for j in range(size)]
 		counter += 1
 		s_start.g = 0
 		s_start.search = counter
 		s_goal.search = counter
 		#push the start stage information to queue
 		s_start.h = Manhattan(s_start, s_goal)
-		heapq.push(Queue, s_start)
-		ComputePath(map_foggy, map_info, counter, s_goal, Queue)
+		heapq.push(openlist, s_start)
+		ComputePath(map_foggy, map_info, counter, s_goal, openlist, closelist)
 
 		## TODO Boyang, can you double check the variable above? --> map-foggy: undeclared
-		if len(Queue) == 0:
+		if len(openlist) == 0:
 			print("I cannot reach the target.")
 			return
 
