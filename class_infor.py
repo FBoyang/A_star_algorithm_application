@@ -15,7 +15,7 @@ the cell is fully expanded or not
 '''
 
 class node:
-	def __init__(self):
+	def __init__(self, block = False):
 		self.x = 0
 		self.y = 0
 		self.h = 0
@@ -23,18 +23,28 @@ class node:
 		self.search = 0
 		self.parent = None
 		self.next = None
-		self.isBlocked = False
+		self.isBlocked = block
 
 
-	def __lt__(self, other):
+	def __lt__(self, other, c = 30*30):
 		#define a new rule to make comparison based on the f value of two cells
-		return self.g + self.h < other.g + other.h
+		return c * (self.g + self.h) - self.g < c * (other.g + other.h) - other.g
 
-	def __eq__(self, other):
-		return self.g + self.h == other.g + other.h
 
 	def addFront(self, node):
 		restlist = self.next
 		self.next = node
 		node.next = restlist
+
+class point:
+	def __init__(self, x, y):
+		self.x = x
+		self.y = y
+		self.next = None
+
+	def push(self, x, y):
+		new = point(x, y)
+		restlist = self.next
+		self.next = new
+		new.next = restlist
 
