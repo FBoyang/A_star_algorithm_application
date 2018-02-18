@@ -36,21 +36,49 @@ It takes 3 parameters:
 Mazeinfor: the information matrix
 snode: the current stage node
 counter: the iteration time of the A* search
-
 Notice:
 currently I don't think we need to check counter, because I think there
 is no conditon in which g(succ(s, a) would be not bigger than g(s) + c(s, a)
-
 Please tell me if I am wrong, because I am probably wrong
 '''
 
 
-def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, closelist):
+
+'''
+Important!!!!
+declaration about why don't need to set g value to infinity:
+because the cost always has a constant 1.
+
+The close list and the open list can be merge into one list: close_open_list,
+because any node's g value that already in the open list don't need to be further updated
+if location (x, y) in close_open_list has value true, it is either in the close list,
+or already in the open list which won't need to be modified.
+'''
+
+def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_list):
     xcoor = snode.x
     ycoor = snode.y
+
+    # update right successor
+
+    if (isValid(xcoor + 1, ycoor) and (not close_open_list[xcoor + 1][ycoor])):
+        close_open_list[xcoor + 1][ycoor] = True
+        if (not isinstance(Mazeinfor[xcoor + 1][ycoor], node)):
+            Mazeinfor[xcoor + 1][ycoor] = node()
+        successor = Mazeinfor[xcoor + 1][ycoor]
+        if (not successor.isBlocked):
+            successor.parent = snode
+            successor.g = snode.g + 1
+            successor.x = xcoor + 1
+            successor.y = ycoor
+            successor.h = Manhattan(successor, s_goal)
+            successor.search = counter
+            heapq.heappush(Queue, successor)
+    # print("push point {} {}".format(xcoor + 1, ycoor))
+
     # update left successor
-    if (isValid(xcoor - 1, ycoor) and (not closelist[xcoor - 1][ycoor])):
-        closelist[xcoor - 1][ycoor] = True
+    if (isValid(xcoor - 1, ycoor) and (not close_open_list[xcoor - 1][ycoor])):
+        close_open_list[xcoor - 1][ycoor] = True
         # this is equal to check if succ(s, a) < counter
         if (not isinstance(Mazeinfor[xcoor - 1][ycoor], node)):
             Mazeinfor[xcoor - 1][ycoor] = node()
@@ -66,26 +94,11 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, closelist):
 
     # print("push point {} {}".format(xcoor - 1, ycoor))
 
-    # update right successor
-
-    if (isValid(xcoor + 1, ycoor) and (not closelist[xcoor + 1][ycoor])):
-        closelist[xcoor + 1][ycoor] = True
-        if (not isinstance(Mazeinfor[xcoor + 1][ycoor], node)):
-            Mazeinfor[xcoor + 1][ycoor] = node()
-        successor = Mazeinfor[xcoor + 1][ycoor]
-        if (not successor.isBlocked):
-            successor.parent = snode
-            successor.g = snode.g + 1
-            successor.x = xcoor + 1
-            successor.y = ycoor
-            successor.h = Manhattan(successor, s_goal)
-            successor.search = counter
-            heapq.heappush(Queue, successor)
-    # print("push point {} {}".format(xcoor + 1, ycoor))
+    
 
     # update downward successor
-    if (isValid(xcoor, ycoor - 1) and (not closelist[xcoor][ycoor - 1])):
-        closelist[xcoor][ycoor - 1] = True
+    if (isValid(xcoor, ycoor - 1) and (not close_open_list[xcoor][ycoor - 1])):
+        close_open_list[xcoor][ycoor - 1] = True
         if (not isinstance(Mazeinfor[xcoor][ycoor - 1], node)):
             Mazeinfor[xcoor][ycoor - 1] = node()
         successor = Mazeinfor[xcoor][ycoor - 1]
@@ -100,8 +113,8 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, closelist):
     # print("push point {} {}".format(xcoor, ycoor - 1))
 
     # update upward successor
-    if (isValid(xcoor, ycoor + 1) and (not closelist[xcoor][ycoor + 1])):
-        closelist[xcoor][ycoor + 1] = True
+    if (isValid(xcoor, ycoor + 1) and (not close_open_list[xcoor][ycoor + 1])):
+        close_open_list[xcoor][ycoor + 1] = True
         if (not isinstance(Mazeinfor[xcoor][ycoor + 1], node)):
             Mazeinfor[xcoor][ycoor + 1] = node()
         successor = Mazeinfor[xcoor][ycoor + 1]
@@ -114,6 +127,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, closelist):
             successor.search = counter
             heapq.heappush(Queue, successor)
     # print("push point {} {}".format(xcoor, ycoor + 1))
+    return
 
 
 # Make the grid, having the top left and bottom right block set to unblocked and seen
@@ -217,7 +231,7 @@ def Manhattan(start, goal):
     return (abs(goal.x - start.x) + abs(goal.y - start.y))
 
 
-def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue, closelist):
+def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue, close_open_list):
     # check whether queue is empty
     while (len(Queue) > 0):
         # print(len(Queue))
@@ -230,11 +244,11 @@ def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue, closelist):
         print("pop point {} {}".format(snode.x, snode.y))
         xcoor = snode.x
         ycoor = snode.y
-        closelist[xcoor][ycoor] = True
+        close_open_list[xcoor][ycoor] = True
         if (snode.x == s_goal.x and snode.y == s_goal.y):
             return
         # update s's successors, executing step 5 to 13
-        surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, closelist)
+        surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_list)
 
 
 def traceback(map_info, s_goal):
@@ -252,7 +266,6 @@ def traceback(map_info, s_goal):
 '''
 traceback function serves to record the current ideal path that the agent 
 estimate from the current position to the destination
-
 In the form of a linked list
 '''
 
@@ -310,7 +323,7 @@ def main():
     path = point(-1, -1)
     while not (s_start.x == s_goal.x and s_start.y == s_goal.y):
         openlist = []
-        closelist = [[False for i in range(size)] for j in range(size)]
+        close_open_list = [[False for i in range(size)] for j in range(size)]
         counter += 1
         s_start.g = 0
         s_start.search = counter
@@ -324,7 +337,7 @@ def main():
         '''
         track record the current idea path from current start goal to the final goal
         '''
-        ComputePath(maze, map_info, counter, s_goal, openlist, closelist)
+        ComputePath(maze, map_info, counter, s_goal, openlist, close_open_list)
         track = traceback(map_info, s_goal)
         if len(openlist) == 0:
             print("I cannot reach the target.")
@@ -336,9 +349,9 @@ def main():
             ptr = ptr.next
         '''
         s_start = take_action(track, maze, map_info, path)
-    # print("current path end is [{} {}]".format(path_ptr.x, path_ptr.y))
-    # print("move to point [{} {}]".format(s_start.x, s_start.y))
-    # print("goal point is [{} {}]".format(s_goal.x, s_goal.y))
+        print("move to point [{} {}]".format(s_start.x, s_start.y))
+    	# print("current path end is [{} {}]".format(path_ptr.x, path_ptr.y))
+    	# print("goal point is [{} {}]".format(s_goal.x, s_goal.y))
 
     '''
         follow the tree pointers from s_goal to s_start, use a linkedlist to record
@@ -350,7 +363,6 @@ def main():
     while ptr != None:
         print("path is [{} {}]".format(ptr.x, ptr.y), end = " ")
         ptr = ptr.next
-
     '''
     draw(maze, path)
 
