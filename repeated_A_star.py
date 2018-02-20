@@ -216,13 +216,16 @@ def draw(maze, path_list, off=10):
             canvas.drawRect(off + i * cell_size, off + j * cell_size, cell_size, cell_size)
 
     ptr = path_list.next
+    while(ptr.next != None):
+    	ptr = ptr.next
+
     while (ptr != None):
         xcoor = ptr.x
         ycoor = ptr.y
         canvas.setFill('red')
         canvas.drawRect(off + xcoor * cell_size, off + ycoor * cell_size, cell_size, cell_size)
         print("path at [{} {}]".format(xcoor, ycoor))
-        ptr = ptr.next
+        ptr = ptr.parent
 
     win.wait()
 

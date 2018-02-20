@@ -42,9 +42,12 @@ class point:
         self.x = x
         self.y = y
         self.next = None
+        self.parent = None
 
     def push(self, x, y):
         new = point(x, y)
         restlist = self.next
         self.next = new
         new.next = restlist
+        if(restlist != None):
+            restlist.parent = new
