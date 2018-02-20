@@ -3,7 +3,7 @@ from ezgraphics import GraphicsWindow
 import sys
 import heapq
 from class_infor import *
-
+import time
 size = 101
 
 
@@ -48,7 +48,6 @@ Please tell me if I am wrong, because I am probably wrong
 Important!!!!
 declaration about why don't need to set g value to infinity:
 because the cost always has a constant 1.
-
 The close list and the open list can be merge into one list: close_open_list,
 because any node's g value that already in the open list don't need to be further updated
 if location (x, y) in close_open_list has value true, it is either in the close list,
@@ -224,7 +223,7 @@ def draw(maze, path_list, off=10):
         ycoor = ptr.y
         canvas.setFill('red')
         canvas.drawRect(off + xcoor * cell_size, off + ycoor * cell_size, cell_size, cell_size)
-        print("path at [{} {}]".format(xcoor, ycoor))
+        #print("path at [{} {}]".format(xcoor, ycoor))
         ptr = ptr.parent
 
     win.wait()
@@ -244,7 +243,7 @@ def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue, close_open_list):
         print("#######")
         '''
         snode = heapq.heappop(Queue)
-        print("pop point {} {}".format(snode.x, snode.y))
+        #print("pop point {} {}".format(snode.x, snode.y))
         xcoor = snode.x
         ycoor = snode.y
         close_open_list[xcoor][ycoor] = True
@@ -291,26 +290,23 @@ def take_action(track, maze, map_info, path):
     y = track.y
     # print("check position [{} {}]".format(x, y))
     position = None
-    if (map_info[x][y].g != 0):
-        print("wrong start point")
-        exit(0)
-    else:
-        # keep moving until
-        while (track != None):
-            x = track.x
-            y = track.y
-            if (not map_info[x][y].isBlocked):
-                detect(map_info[x][y], maze, map_info)
-                position = track
-                path.push(position.x, position.y)
-                track = track.next
-            else:
-                break
+    # keep moving until
+    while (track != None):
+        x = track.x
+        y = track.y
+        if (not map_info[x][y].isBlocked):
+            detect(map_info[x][y], maze, map_info)
+            position = track
+            path.push(position.x, position.y)
+            track = track.parent
+        else:
+            break
     # need to complete
     return position
 
 
 def main():
+    start = time.time()
     # generate a random foggy map
     maze = setup()
     # generate a information map
@@ -328,20 +324,19 @@ def main():
         openlist = []
         close_open_list = [[False for i in range(size)] for j in range(size)]
         counter += 1
-        s_start.g = 0
+        s_goal.g = 0
         s_start.search = counter
         s_goal.search = counter
         # push the start stage information to queue
-        s_start.h = Manhattan(s_start, s_goal)
-        heapq.heappush(openlist, s_start)
+        s_goal.h = Manhattan(s_goal, s_start)
+        heapq.heappush(openlist, s_goal)
 
         # print("push point {} {}".format(s_start.x, s_start.y))
 
         '''
         track record the current idea path from current start goal to the final goal
         '''
-        ComputePath(maze, map_info, counter, s_goal, openlist, close_open_list)
-        track = traceback(map_info, s_goal)
+        ComputePath(maze, map_info, counter, s_start, openlist, close_open_list)
         if len(openlist) == 0:
             print("I cannot reach the target.")
             return
@@ -351,8 +346,8 @@ def main():
             print('track is [{} {}]'.format(ptr.x, ptr.y), end=' ')
             ptr = ptr.next
         '''
-        s_start = take_action(track, maze, map_info, path)
-        print("move to point [{} {}]".format(s_start.x, s_start.y))
+        s_start = take_action(s_start, maze, map_info, path)
+        #print("move to point [{} {}]".format(s_start.x, s_start.y))
     	# print("current path end is [{} {}]".format(path_ptr.x, path_ptr.y))
     	# print("goal point is [{} {}]".format(s_goal.x, s_goal.y))
 
@@ -367,6 +362,8 @@ def main():
         print("path is [{} {}]".format(ptr.x, ptr.y), end = " ")
         ptr = ptr.next
     '''
+    end = time.time()
+    print(end - start)
     draw(maze, path)
 
     return
