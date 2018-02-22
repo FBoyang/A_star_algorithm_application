@@ -72,7 +72,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.y = ycoor
             successor.h = Manhattan(successor, s_goal)
             successor.search = counter
-            heapq.heappush(Queue, successor)
+            MinHeap.push(Queue, successor)
     # print("push point {} {}".format(xcoor + 1, ycoor))
 
     # update left successor
@@ -89,7 +89,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.y = ycoor
             successor.h = Manhattan(successor, s_goal)
             successor.search = counter
-            heapq.heappush(Queue, successor)
+            MinHeap.push(Queue, successor)
 
     # print("push point {} {}".format(xcoor - 1, ycoor))
 
@@ -108,7 +108,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.y = ycoor - 1
             successor.h = Manhattan(successor, s_goal)
             successor.search = counter
-            heapq.heappush(Queue, successor)
+            MinHeap.push(Queue, successor)
     # print("push point {} {}".format(xcoor, ycoor - 1))
 
     # update upward successor
@@ -124,7 +124,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.y = ycoor + 1
             successor.h = Manhattan(successor, s_goal)
             successor.search = counter
-            heapq.heappush(Queue, successor)
+            MinHeap.push(Queue, successor)
     # print("push point {} {}".format(xcoor, ycoor + 1))
     return
 
@@ -238,11 +238,13 @@ def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue, close_open_list):
     while (len(Queue) > 0):
         # print(len(Queue))
         '''
-        for i in Queue:
-            print("queue has [{} {}]".format(i.x, i.y))
-        print("#######")
+        for i in range(len(Queue)):
+            n = Queue._MinHeap__heap[i]
+            print("[{} {} {} {}] ".format(n.x, n.y, n.g, n.g + n.h), end = "")
+        print(" ")
+        print(" ")
         '''
-        snode = heapq.heappop(Queue)
+        snode = MinHeap.pop(Queue)
         #print("pop point {} {}".format(snode.x, snode.y))
         xcoor = snode.x
         ycoor = snode.y
@@ -325,7 +327,7 @@ def main():
     s_goal = map_info[size - 1][size - 1]
     path = point(-1, -1)
     while not (s_start.x == s_goal.x and s_start.y == s_goal.y):
-        openlist = []
+        openlist = MinHeap()
         close_open_list = [[False for i in range(size)] for j in range(size)]
         counter += 1
         s_start.g = 0
@@ -333,7 +335,7 @@ def main():
         s_goal.search = counter
         # push the start stage information to queue
         s_start.h = Manhattan(s_start, s_goal)
-        heapq.heappush(openlist, s_start)
+        MinHeap.push(openlist, s_start)
 
         # print("push point {} {}".format(s_start.x, s_start.y))
 
@@ -353,7 +355,7 @@ def main():
         '''
         s_start = take_action(track, maze, map_info, path)
         #print("move to point [{} {}]".format(s_start.x, s_start.y))
-    	# print("current path end is [{} {}]".format(path_ptr.x, path_ptr.y))
+        #print("current path end is [{} {}]".format(s_start.x, s_start.y))
     	# print("goal point is [{} {}]".format(s_goal.x, s_goal.y))
 
     '''
