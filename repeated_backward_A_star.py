@@ -222,7 +222,7 @@ def draw(maze, path_list, off=10):
         xcoor = ptr.x
         ycoor = ptr.y
         canvas.setFill('red')
-        canvas.drawOval(off + xcoor * cell_size + cell_size*.2, off + ycoor * cell_size+ cell_size*.2, cell_size*.6, cell_size*.6)
+        canvas.drawRect(off + xcoor * cell_size, off + ycoor * cell_size, cell_size, cell_size)
         #print("path at [{} {}]".format(xcoor, ycoor))
         ptr = ptr.parent
 
@@ -242,7 +242,53 @@ def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue, close_open_list):
             print("queue has [{} {}]".format(i.x, i.y))
         print("#######")
         '''
-        snode = heapq.heappop(Queue)
+
+        '''
+        tie breaking implementation for when 2 nodes in the heap have the same f value
+        we tie break in 2 ways:
+        1. by choosing the node with the smaller g value
+        2. choosing the node the the larger g value
+        used this to do time analysis on tie breaking
+        '''
+        
+        ''' tie breaking by smaller g value - commented out to let other tie breaker work
+        #tie breaking by smaller g value
+        if len(Queue) > 1:
+            snode1 = heapq.heappop(Queue)
+            snode2 = heapq.heappop(Queue)
+
+            if snode1.fValue() == snode2.fValue():
+                if snode1.g > snode2.g:
+                    heapq.heappush(Queue, snode1)
+                    snode = snode2
+                else: 
+                    heapq.heappush(Queue, snode2)
+                    snode = snode1
+            else:
+                heapq.heappush(Queue, snode2)
+                snode = snode1
+        else: 
+            snode = heapq.heappop(Queue)
+        '''
+
+        if len(Queue) > 1:
+            snode1 = heapq.heappop(Queue)
+            snode2 = heapq.heappop(Queue)
+
+            if snode1.fValue() == snode2.fValue():
+                if snode1.g < snode2.g:
+                    heapq.heappush(Queue, snode1)
+                    snode = snode2
+                else: 
+                    heapq.heappush(Queue, snode2)
+                    snode = snode1
+            else:
+                heapq.heappush(Queue, snode2)
+                snode = snode1
+        else: 
+            snode = heapq.heappop(Queue);
+
+        #snode = heapq.heappop(Queue)
         #print("pop point {} {}".format(snode.x, snode.y))
         xcoor = snode.x
         ycoor = snode.y
@@ -306,6 +352,9 @@ def take_action(track, maze, map_info, path):
 
 
 def main():
+    #seed the map in order to be able to generate the same map and compare run times of tie breaking
+    np.random.seed(0)
+
     start = time.time()
     # generate a random foggy map
     maze = setup()
@@ -363,7 +412,7 @@ def main():
         ptr = ptr.next
     '''
     end = time.time()
-    print("Time:" , end - start)
+    print(end - start)
     draw(maze, path)
 
     return
