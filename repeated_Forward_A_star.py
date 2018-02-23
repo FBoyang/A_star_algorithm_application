@@ -1,6 +1,10 @@
 import numpy as np
+import Tkinter
+import tkSimpleDialog
+Tkinter.tkSimpleDialog = tkSimpleDialog
 from ezgraphics import GraphicsWindow
 import sys
+import heapq
 from class_infor import *
 import time
 size = 101
@@ -71,7 +75,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.y = ycoor
             successor.h = Manhattan(successor, s_goal)
             successor.search = counter
-            MinHeap.push(Queue, successor)
+            heapq.heappush(Queue, successor)
     # print("push point {} {}".format(xcoor + 1, ycoor))
 
     # update left successor
@@ -88,7 +92,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.y = ycoor
             successor.h = Manhattan(successor, s_goal)
             successor.search = counter
-            MinHeap.push(Queue, successor)
+            heapq.heappush(Queue, successor)
 
     # print("push point {} {}".format(xcoor - 1, ycoor))
 
@@ -107,7 +111,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.y = ycoor - 1
             successor.h = Manhattan(successor, s_goal)
             successor.search = counter
-            MinHeap.push(Queue, successor)
+            heapq.heappush(Queue, successor)
     # print("push point {} {}".format(xcoor, ycoor - 1))
 
     # update upward successor
@@ -123,7 +127,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.y = ycoor + 1
             successor.h = Manhattan(successor, s_goal)
             successor.search = counter
-            MinHeap.push(Queue, successor)
+            heapq.heappush(Queue, successor)
     # print("push point {} {}".format(xcoor, ycoor + 1))
     return
 
@@ -221,11 +225,7 @@ def draw(maze, path_list, off=10):
         xcoor = ptr.x
         ycoor = ptr.y
         canvas.setFill('red')
-
-        canvas.drawOval(off + xcoor * cell_size + cell_size*.2, off + ycoor * cell_size+ cell_size*.2, cell_size*.6, cell_size*.6)
-
-
-        # canvas.drawRect(off + xcoor * cell_size, off + ycoor * cell_size, cell_size, cell_size)
+        canvas.drawRect(off + xcoor * cell_size, off + ycoor * cell_size, cell_size, cell_size)
         #print("path at [{} {}]".format(xcoor, ycoor))
         ptr = ptr.parent
 
@@ -241,13 +241,57 @@ def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue, close_open_list):
     while (len(Queue) > 0):
         # print(len(Queue))
         '''
-        for i in range(len(Queue)):
-            n = Queue._MinHeap__heap[i]
-            print("[{} {} {} {}] ".format(n.x, n.y, n.g, n.g + n.h), end = "")
-        print(" ")
-        print(" ")
+        for i in Queue:
+            print("queue has [{} {}]".format(i.x, i.y))
+        print("#######")
         '''
-        snode = MinHeap.pop(Queue)
+
+        '''
+        tie breaking implementation for when 2 nodes in the heap have the same f value
+        we tie break in 2 ways:
+        1. by choosing the node with the smaller g value
+        2. choosing the node the the larger g value
+        used this to do time analysis on tie breaking
+        '''
+        
+        #tie breaking by smaller g value
+        
+        if len(Queue) > 1:
+            snode1 = heapq.heappop(Queue)
+            snode2 = heapq.heappop(Queue)
+
+            if snode1.fValue() == snode2.fValue():
+                if snode1.g > snode2.g:
+                    heapq.heappush(Queue, snode1)
+                    snode = snode2
+                else: 
+                    heapq.heappush(Queue, snode2)
+                    snode = snode1
+            else:
+                heapq.heappush(Queue, snode2)
+                snode = snode1
+        else: 
+            snode = heapq.heappop(Queue)
+        
+        ''' tie breaking by larger g value - commented out to let other tie breaker work
+        if len(Queue) > 1:
+            snode1 = heapq.heappop(Queue)
+            snode2 = heapq.heappop(Queue)
+
+            if snode1.fValue() == snode2.fValue():
+                if snode1.g < snode2.g:
+                    heapq.heappush(Queue, snode1)
+                    snode = snode2
+                else: 
+                    heapq.heappush(Queue, snode2)
+                    snode = snode1
+            else:
+                heapq.heappush(Queue, snode2)
+                snode = snode1
+        else: 
+            snode = heapq.heappop(Queue)
+        '''
+
         #print("pop point {} {}".format(snode.x, snode.y))
         xcoor = snode.x
         ycoor = snode.y
@@ -315,6 +359,7 @@ def take_action(track, maze, map_info, path):
 
 
 def main():
+    np.random.seed(0)
     start = time.time()
     # generate a random foggy map
     maze = setup()
@@ -330,7 +375,7 @@ def main():
     s_goal = map_info[size - 1][size - 1]
     path = point(-1, -1)
     while not (s_start.x == s_goal.x and s_start.y == s_goal.y):
-        openlist = MinHeap()
+        openlist = []
         close_open_list = [[False for i in range(size)] for j in range(size)]
         counter += 1
         s_start.g = 0
@@ -338,7 +383,7 @@ def main():
         s_goal.search = counter
         # push the start stage information to queue
         s_start.h = Manhattan(s_start, s_goal)
-        MinHeap.push(openlist, s_start)
+        heapq.heappush(openlist, s_start)
 
         # print("push point {} {}".format(s_start.x, s_start.y))
 
@@ -358,7 +403,7 @@ def main():
         '''
         s_start = take_action(track, maze, map_info, path)
         #print("move to point [{} {}]".format(s_start.x, s_start.y))
-        #print("current path end is [{} {}]".format(s_start.x, s_start.y))
+    	# print("current path end is [{} {}]".format(path_ptr.x, path_ptr.y))
     	# print("goal point is [{} {}]".format(s_goal.x, s_goal.y))
 
     '''
@@ -373,7 +418,7 @@ def main():
         ptr = ptr.next
     '''
     end = time.time()
-    print("Time:" , end - start)
+    print(end - start)
     draw(maze, path)
 
     return
