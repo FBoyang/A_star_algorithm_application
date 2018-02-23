@@ -222,7 +222,7 @@ def draw(maze, path_list, off=10):
         xcoor = ptr.x
         ycoor = ptr.y
         canvas.setFill('red')
-        canvas.drawRect(off + xcoor * cell_size, off + ycoor * cell_size, cell_size, cell_size)
+        canvas.drawOval(off + xcoor * cell_size + cell_size*.2, off + ycoor * cell_size+ cell_size*.2, cell_size*.6, cell_size*.6)
         #print("path at [{} {}]".format(xcoor, ycoor))
         ptr = ptr.parent
 
@@ -363,7 +363,7 @@ def main():
         ptr = ptr.next
     '''
     end = time.time()
-    print(end - start)
+    print("Time:" , end - start)
     draw(maze, path)
 
     return
