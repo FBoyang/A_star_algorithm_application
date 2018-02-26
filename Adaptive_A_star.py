@@ -70,7 +70,10 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list, visi
             successor.g = snode.g + 1
             successor.x = xcoor + 1
             successor.y = ycoor
-            successor.h = successor.nh
+            if(successor.nh == -1):
+            	successor.h = Manhattan(successor, s_goal)
+            else:
+                successor.h = successor.nh
             MinHeap.push(Queue, successor)
             visited_list.append(successor)
     # print("push point {} {}".format(xcoor + 1, ycoor))
@@ -87,7 +90,10 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list, visi
             successor.g = snode.g + 1
             successor.x = xcoor - 1
             successor.y = ycoor
-            successor.h = successor.nh
+            if(successor.nh == -1):
+            	successor.h = Manhattan(successor, s_goal)
+            else:
+                successor.h = successor.nh
             MinHeap.push(Queue, successor)
             visited_list.append(successor)
 
@@ -106,7 +112,10 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list, visi
             successor.g = snode.g + 1
             successor.x = xcoor
             successor.y = ycoor - 1
-            successor.h = successor.nh
+            if(successor.nh == -1):
+            	successor.h = Manhattan(successor, s_goal)
+            else:
+                successor.h = successor.nh
             MinHeap.push(Queue, successor)
             visited_list.append(successor)
     # print("push point {} {}".format(xcoor, ycoor - 1))
@@ -122,7 +131,10 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list, visi
             successor.g = snode.g + 1
             successor.x = xcoor
             successor.y = ycoor + 1
-            successor.h = successor.nh
+            if(successor.nh == -1):
+            	successor.h = Manhattan(successor, s_goal)
+            else:
+                successor.h = successor.nh
             MinHeap.push(Queue, successor)
             visited_list.append(successor)
     # print("push point {} {}".format(xcoor, ycoor + 1))
