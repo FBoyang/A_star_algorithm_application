@@ -183,7 +183,7 @@ def detect(s, maze, Mazeinfor):
 
 # Return false for unblocked, true for blocked
 def randomization():
-    temp = np.random.choice([0, 1], 1, p=[0, 1])
+    temp = np.random.choice([0, 1], 1, p=[0.2, 0.8])
     if temp[0] == 1:
         return False
     return True
