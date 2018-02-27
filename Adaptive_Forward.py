@@ -1,10 +1,10 @@
 import numpy as np
 from ezgraphics import GraphicsWindow
 import sys
-from class_infor import *
+import heapq
+from class_infor2 import *
 import time
 size = 101
-
 
 # initialize the information matrix
 def setup_info():
@@ -24,39 +24,14 @@ def setup_info():
     end.g = sys.maxsize
     return grid
 
-
 def isValid(x, y):
     return ((x >= 0) and (x < size) and (y >= 0) and (y < size))
 
-
-'''
-update the surrounding node of the current node s
-It takes 3 parameters: 
-Mazeinfor: the information matrix
-snode: the current stage node
-counter: the iteration time of the A* search
-Notice:
-currently I don't think we need to check counter, because I think there
-is no conditon in which g(succ(s, a) would be not bigger than g(s) + c(s, a)
-Please tell me if I am wrong, because I am probably wrong
-'''
-
-
-
-'''
-Important!!!!
-declaration about why don't need to set g value to infinity:
-because the cost always has a constant 1.
-The close list and the open list can be merge into one list: close_open_list,
-because any node's g value that already in the open list don't need to be further updated
-if location (x, y) in close_open_list has value true, it is either in the close list,
-or already in the open list which won't need to be modified.
-'''
-
-def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
+def surround_update_A(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list, visited_list):
+    global Adaptive
     xcoor = snode.x
     ycoor = snode.y
-    global counter
+
     # update right successor
 
     if (isValid(xcoor + 1, ycoor) and (not close_open_list[xcoor + 1][ycoor])):
@@ -69,9 +44,13 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
             successor.g = snode.g + 1
             successor.x = xcoor + 1
             successor.y = ycoor
-            successor.h = Manhattan(successor, s_goal)
+            if(successor.nh == -1):
+            	successor.h = Manhattan(successor, s_goal)
+            else:
+                successor.h = successor.nh
             MinHeap.push(Queue, successor)
-            counter += 1
+            Adaptive += 1
+            visited_list.append(successor)
     # print("push point {} {}".format(xcoor + 1, ycoor))
 
     # update left successor
@@ -86,9 +65,13 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
             successor.g = snode.g + 1
             successor.x = xcoor - 1
             successor.y = ycoor
-            successor.h = Manhattan(successor, s_goal)
+            if(successor.nh == -1):
+            	successor.h = Manhattan(successor, s_goal)
+            else:
+                successor.h = successor.nh
             MinHeap.push(Queue, successor)
-            counter += 1
+            Adaptive += 1
+            visited_list.append(successor)
 
     # print("push point {} {}".format(xcoor - 1, ycoor))
 
@@ -105,9 +88,13 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
             successor.g = snode.g + 1
             successor.x = xcoor
             successor.y = ycoor - 1
-            successor.h = Manhattan(successor, s_goal)
+            if(successor.nh == -1):
+            	successor.h = Manhattan(successor, s_goal)
+            else:
+                successor.h = successor.nh
             MinHeap.push(Queue, successor)
-            counter += 1
+            Adaptive += 1
+            visited_list.append(successor)
     # print("push point {} {}".format(xcoor, ycoor - 1))
 
     # update upward successor
@@ -121,12 +108,15 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
             successor.g = snode.g + 1
             successor.x = xcoor
             successor.y = ycoor + 1
-            successor.h = Manhattan(successor, s_goal)
+            if(successor.nh == -1):
+            	successor.h = Manhattan(successor, s_goal)
+            else:
+                successor.h = successor.nh
             MinHeap.push(Queue, successor)
-            counter += 1
+            Adaptive += 1
+            visited_list.append(successor)
     # print("push point {} {}".format(xcoor, ycoor + 1))
     return
-
 
 # Make the grid, having the top left and bottom right block set to unblocked and seen
 def setup():
@@ -139,19 +129,7 @@ def setup():
                 grid[i][j] = Cell(i, j, False, True)
             else:
                 grid[i][j] = Cell(i, j, randomization())
-            grid[100][89] = Cell(100, 89, True, False)
-            grid[99][89] = Cell(99, 89, True, False)
-            grid[98][89] = Cell(98, 89, True, False)
-            grid[97][89] = Cell(97, 89, True, False)
-
     return grid
-
-
-'''
-	detect function mimic the sensor detection, to be more specific, 
-	suppose the agent standing at the stage s, using the real word information
-	maze to update the surrounding information to map_info 
-'''
 
 
 def detect(s, maze, Mazeinfor):
@@ -194,52 +172,19 @@ def randomization():
     return True
 
 
-# making a grid as [101][101]
 def makeGrid():
     grid = [[0 for x in range(size)] for y in range(size)]
     return grid
 
 
-def draw(maze, path_list, off=10):
-    win = GraphicsWindow(size * off * 1.2, size * off * 1.2)
-    canvas = win.canvas()
-    cell_size = off  # Height and width of checkerboard squares.
-    # start
-
-    for i in range(size):  # Note that i ranges from 0 through 7, inclusive.
-        for j in range(size):  # So does j.
-            cell = maze[i][j]
-            if not cell.ifBlocked:
-                color = 'white'
-            else:
-                color = 'black'
-
-            canvas.setFill(color)
-            # draw cell_size * cell_size rectangle at point (offset_x + i * cell_size, offset_y + j * cell_size)
-            canvas.drawRect(off + i * cell_size, off + j * cell_size, cell_size, cell_size)
-
-    ptr = path_list.next
-    while(ptr.next != None):
-    	ptr = ptr.next
-
-    while (ptr != None):
-        xcoor = ptr.x
-        ycoor = ptr.y
-        canvas.setFill('red')
-        canvas.drawOval(off + xcoor * cell_size + cell_size*.2, off + ycoor * cell_size+ cell_size*.2, cell_size*.6, cell_size*.6)
-        #print("path at [{} {}]".format(xcoor, ycoor))
-        ptr = ptr.parent
-
-    win.wait()
-
-
 def Manhattan(start, goal):
     return (abs(goal.x - start.x) + abs(goal.y - start.y))
 
-
-def ComputePath(Maze, Mazeinfor, s_goal, Queue, close_open_list):
+def ComputePath_A(Maze, Mazeinfor, s_goal, Queue, close_open_list, visited_list):
+    global g_goal
     # check whether queue is empty
     while (len(Queue) > 0):
+        # print(len(Queue))
         '''
         for i in range(len(Queue)):
             n = Queue._MinHeap__heap[i]
@@ -253,9 +198,10 @@ def ComputePath(Maze, Mazeinfor, s_goal, Queue, close_open_list):
         ycoor = snode.y
         close_open_list[xcoor][ycoor] = True
         if (snode.x == s_goal.x and snode.y == s_goal.y):
+            g_goal = snode.g
             return
         # update s's successors, executing step 5 to 13
-        surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list)
+        surround_update_A(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list, visited_list)
 
 
 def traceback(map_info, s_goal):
@@ -295,29 +241,200 @@ def take_action(track, maze, map_info, path):
     y = track.y
     # print("check position [{} {}]".format(x, y))
     position = None
-    # keep moving until
-    while (track != None):
-        x = track.x
-        y = track.y
-        if (not map_info[x][y].isBlocked):
-            detect(map_info[x][y], maze, map_info)
-            position = track
-            path.push(position.x, position.y)
-            track = track.parent
-        else:
-            break
+    if (map_info[x][y].g != 0):
+        print("wrong start point")
+        exit(0)
+    else:
+        # keep moving until
+        while (track != None):
+            x = track.x
+            y = track.y
+            if (not map_info[x][y].isBlocked):
+                detect(map_info[x][y], maze, map_info)
+                position = track
+                path.push(position.x, position.y)
+                track = track.next
+            else:
+                break
     # need to complete
     return position
 
 
-def main():
+def main_A():
+    global g_goal
+    global Adaptive
     start = time.time()
     # generate a random foggy map
     maze = setup()
     # generate a information map
     map_info = setup_info()
 
-    counter = 0
+    # start from the begining, end at the goal stage
+    s_start = map_info[0][0]
+    # detect the block
+    detect(s_start, maze, map_info)
+    s_goal = map_info[size - 1][size - 1]
+    s_start.nh = Manhattan(s_start, s_goal)
+    path = point(-1, -1)
+    while not (s_start.x == s_goal.x and s_start.y == s_goal.y):
+        visited_list = []
+        openlist = MinHeap()
+        close_open_list = [[False for i in range(size)] for j in range(size)]
+        s_start.g = 0
+        # push the start stage information to queue
+        s_start.h = s_start.nh
+        MinHeap.push(openlist, s_start)
+        Adaptive += 1
+        visited_list.append(s_start)
+        # print("push point {} {}".format(s_start.x, s_start.y))
+
+        '''
+        track record the current idea path from current start goal to the final goal
+        '''
+        ComputePath_A(maze, map_info, s_goal, openlist, close_open_list, visited_list)
+        '''
+        update the hnew value
+        '''
+        for i in visited_list:
+            i.nh = g_goal - i.g
+        track = traceback(map_info, s_goal)
+        if len(openlist) == 0:
+            print("I cannot reach the target.")
+            return
+
+        '''
+        while(ptr != None):
+            print('track is [{} {}]'.format(ptr.x, ptr.y), end=' ')
+            ptr = ptr.next
+        '''
+        s_start = take_action(track, maze, map_info, path)
+        #print("move to point [{} {}]".format(s_start.x, s_start.y))
+        #print("current path end is [{} {}]".format(s_start.x, s_start.y))
+    	# print("goal point is [{} {}]".format(s_goal.x, s_goal.y))
+
+    '''
+        follow the tree pointers from s_goal to s_start, use a linkedlist to record
+        the path, and then move the agent to the goal stage
+    '''
+    # final_track = final_trace(map_info, s_goal)
+    ptr = path.next
+    '''
+    while ptr != None:
+        print("path is [{} {}]".format(ptr.x, ptr.y), end = " ")
+        ptr = ptr.next
+    '''
+    end = time.time()
+    print(end - start)
+
+    return
+
+
+
+def ComputePath_F(Maze, Mazeinfor, s_goal, Queue, close_open_list):
+
+    # check whether queue is empty
+    while (len(Queue) > 0):
+        # print(len(Queue))
+        '''
+        for i in range(len(Queue)):
+            n = Queue._MinHeap__heap[i]
+            print("[{} {} {} {}] ".format(n.x, n.y, n.g, n.g + n.h), end = "")
+        print(" ")
+        print(" ")
+        '''
+        snode = MinHeap.pop(Queue)
+        #print("pop point {} {}".format(snode.x, snode.y))
+        xcoor = snode.x
+        ycoor = snode.y
+        close_open_list[xcoor][ycoor] = True
+        if (snode.x == s_goal.x and snode.y == s_goal.y):
+            return
+        # update s's successors, executing step 5 to 13
+        surround_update_F(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list)
+
+def surround_update_F(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
+    global Forward
+    xcoor = snode.x
+    ycoor = snode.y
+
+    # update right successor
+
+    if (isValid(xcoor + 1, ycoor) and (not close_open_list[xcoor + 1][ycoor])):
+        close_open_list[xcoor + 1][ycoor] = True
+        if (not isinstance(Mazeinfor[xcoor + 1][ycoor], node)):
+            Mazeinfor[xcoor + 1][ycoor] = node()
+        successor = Mazeinfor[xcoor + 1][ycoor]
+        if (not successor.isBlocked):
+            successor.parent = snode
+            successor.g = snode.g + 1
+            successor.x = xcoor + 1
+            successor.y = ycoor
+            successor.h = Manhattan(successor, s_goal)
+            MinHeap.push(Queue, successor)
+            Forward += 1
+    # print("push point {} {}".format(xcoor + 1, ycoor))
+
+    # update left successor
+    if (isValid(xcoor - 1, ycoor) and (not close_open_list[xcoor - 1][ycoor])):
+        close_open_list[xcoor - 1][ycoor] = True
+        # this is equal to check if succ(s, a) < counter
+        if (not isinstance(Mazeinfor[xcoor - 1][ycoor], node)):
+            Mazeinfor[xcoor - 1][ycoor] = node()
+        successor = Mazeinfor[xcoor - 1][ycoor]
+        if (not successor.isBlocked):
+            successor.parent = snode
+            successor.g = snode.g + 1
+            successor.x = xcoor - 1
+            successor.y = ycoor
+            successor.h = Manhattan(successor, s_goal)
+            MinHeap.push(Queue, successor)
+            Forward += 1
+
+    # print("push point {} {}".format(xcoor - 1, ycoor))
+
+    
+
+    # update downward successor
+    if (isValid(xcoor, ycoor - 1) and (not close_open_list[xcoor][ycoor - 1])):
+        close_open_list[xcoor][ycoor - 1] = True
+        if (not isinstance(Mazeinfor[xcoor][ycoor - 1], node)):
+            Mazeinfor[xcoor][ycoor - 1] = node()
+        successor = Mazeinfor[xcoor][ycoor - 1]
+        if (not successor.isBlocked):
+            successor.parent = snode
+            successor.g = snode.g + 1
+            successor.x = xcoor
+            successor.y = ycoor - 1
+            successor.h = Manhattan(successor, s_goal)
+            MinHeap.push(Queue, successor)
+            Forward += 1
+    # print("push point {} {}".format(xcoor, ycoor - 1))
+
+    # update upward successor
+    if (isValid(xcoor, ycoor + 1) and (not close_open_list[xcoor][ycoor + 1])):
+        close_open_list[xcoor][ycoor + 1] = True
+        if (not isinstance(Mazeinfor[xcoor][ycoor + 1], node)):
+            Mazeinfor[xcoor][ycoor + 1] = node()
+        successor = Mazeinfor[xcoor][ycoor + 1]
+        if (not successor.isBlocked):
+            successor.parent = snode
+            successor.g = snode.g + 1
+            successor.x = xcoor
+            successor.y = ycoor + 1
+            successor.h = Manhattan(successor, s_goal)
+            MinHeap.push(Queue, successor)
+            Forward += 1
+    # print("push point {} {}".format(xcoor, ycoor + 1))
+    return
+
+def main_F():
+    global Forward
+    start = time.time()
+    # generate a random foggy map
+    maze = setup()
+    # generate a information map
+    map_info = setup_info()
+
     # start from the begining, end at the goal stage
     s_start = map_info[0][0]
 
@@ -328,19 +445,18 @@ def main():
     while not (s_start.x == s_goal.x and s_start.y == s_goal.y):
         openlist = MinHeap()
         close_open_list = [[False for i in range(size)] for j in range(size)]
-        s_goal.g = 0
-        s_start.search = counter
-        s_goal.search = counter
+        s_start.g = 0
         # push the start stage information to queue
-        s_goal.h = Manhattan(s_goal, s_start)
-        MinHeap.push(openlist, s_goal)
-
+        s_start.h = Manhattan(s_start, s_goal)
+        MinHeap.push(openlist, s_start)
+        Forward += 1
         # print("push point {} {}".format(s_start.x, s_start.y))
 
         '''
         track record the current idea path from current start goal to the final goal
         '''
-        ComputePath(maze, map_info, s_start, openlist, close_open_list)
+        ComputePath_F(maze, map_info, s_goal, openlist, close_open_list)
+        track = traceback(map_info, s_goal)
         if len(openlist) == 0:
             print("I cannot reach the target.")
             return
@@ -350,9 +466,9 @@ def main():
             print('track is [{} {}]'.format(ptr.x, ptr.y), end=' ')
             ptr = ptr.next
         '''
-        s_start = take_action(s_start, maze, map_info, path)
+        s_start = take_action(track, maze, map_info, path)
         #print("move to point [{} {}]".format(s_start.x, s_start.y))
-    	# print("current path end is [{} {}]".format(path_ptr.x, path_ptr.y))
+        #print("current path end is [{} {}]".format(s_start.x, s_start.y))
     	# print("goal point is [{} {}]".format(s_goal.x, s_goal.y))
 
     '''
@@ -368,12 +484,14 @@ def main():
     '''
     end = time.time()
     print("Time:" , end - start)
-    draw(maze, path)
 
     return
 
-
 if __name__ == "__main__":
-    counter = 0
-    main()
-    print("repeated backward expand node: {}".format(counter))
+    g_goal = 0
+    Forward = 0
+    Adaptive = 0
+    main_F()
+    main_A()
+    print("Forward is {}".format(Forward))
+    print("Adaptive is {}".format(Adaptive))

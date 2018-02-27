@@ -3,8 +3,7 @@ from ezgraphics import GraphicsWindow
 import sys
 from class_infor import *
 import time
-size = 101
-
+size = 81
 
 # initialize the information matrix
 def setup_info():
@@ -28,35 +27,11 @@ def setup_info():
 def isValid(x, y):
     return ((x >= 0) and (x < size) and (y >= 0) and (y < size))
 
-
-'''
-update the surrounding node of the current node s
-It takes 3 parameters: 
-Mazeinfor: the information matrix
-snode: the current stage node
-counter: the iteration time of the A* search
-Notice:
-currently I don't think we need to check counter, because I think there
-is no conditon in which g(succ(s, a) would be not bigger than g(s) + c(s, a)
-Please tell me if I am wrong, because I am probably wrong
-'''
-
-
-
-'''
-Important!!!!
-declaration about why don't need to set g value to infinity:
-because the cost always has a constant 1.
-The close list and the open list can be merge into one list: close_open_list,
-because any node's g value that already in the open list don't need to be further updated
-if location (x, y) in close_open_list has value true, it is either in the close list,
-or already in the open list which won't need to be modified.
-'''
-
 def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
     xcoor = snode.x
     ycoor = snode.y
     global counter
+    global canvas
     # update right successor
 
     if (isValid(xcoor + 1, ycoor) and (not close_open_list[xcoor + 1][ycoor])):
@@ -72,6 +47,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
             successor.h = Manhattan(successor, s_goal)
             MinHeap.push(Queue, successor)
             counter += 1
+            canvas.drawRect(10 + successor.x * 10, 10 + successor.y * 10, 10, 10)
     # print("push point {} {}".format(xcoor + 1, ycoor))
 
     # update left successor
@@ -89,6 +65,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
             successor.h = Manhattan(successor, s_goal)
             MinHeap.push(Queue, successor)
             counter += 1
+            canvas.drawRect(10 + successor.x * 10, 10 + successor.y * 10, 10, 10)
 
     # print("push point {} {}".format(xcoor - 1, ycoor))
 
@@ -108,6 +85,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
             successor.h = Manhattan(successor, s_goal)
             MinHeap.push(Queue, successor)
             counter += 1
+            canvas.drawRect(10 + successor.x * cell_size, 10 + successor.y * 10, 10, 10)
     # print("push point {} {}".format(xcoor, ycoor - 1))
 
     # update upward successor
@@ -124,9 +102,9 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
             successor.h = Manhattan(successor, s_goal)
             MinHeap.push(Queue, successor)
             counter += 1
+            canvas.drawRect(10 + successor.x * cell_size, 10 + successor.y * 10, 10, 10)
     # print("push point {} {}".format(xcoor, ycoor + 1))
     return
-
 
 # Make the grid, having the top left and bottom right block set to unblocked and seen
 def setup():
@@ -139,19 +117,8 @@ def setup():
                 grid[i][j] = Cell(i, j, False, True)
             else:
                 grid[i][j] = Cell(i, j, randomization())
-            grid[100][89] = Cell(100, 89, True, False)
-            grid[99][89] = Cell(99, 89, True, False)
-            grid[98][89] = Cell(98, 89, True, False)
-            grid[97][89] = Cell(97, 89, True, False)
-
     return grid
 
-
-'''
-	detect function mimic the sensor detection, to be more specific, 
-	suppose the agent standing at the stage s, using the real word information
-	maze to update the surrounding information to map_info 
-'''
 
 
 def detect(s, maze, Mazeinfor):
@@ -185,7 +152,6 @@ def detect(s, maze, Mazeinfor):
 
     return
 
-
 # Return false for unblocked, true for blocked
 def randomization():
     temp = np.random.choice([0, 1], 1, p=[0.2, 0.8])
@@ -198,39 +164,6 @@ def randomization():
 def makeGrid():
     grid = [[0 for x in range(size)] for y in range(size)]
     return grid
-
-
-def draw(maze, path_list, off=10):
-    win = GraphicsWindow(size * off * 1.2, size * off * 1.2)
-    canvas = win.canvas()
-    cell_size = off  # Height and width of checkerboard squares.
-    # start
-
-    for i in range(size):  # Note that i ranges from 0 through 7, inclusive.
-        for j in range(size):  # So does j.
-            cell = maze[i][j]
-            if not cell.ifBlocked:
-                color = 'white'
-            else:
-                color = 'black'
-
-            canvas.setFill(color)
-            # draw cell_size * cell_size rectangle at point (offset_x + i * cell_size, offset_y + j * cell_size)
-            canvas.drawRect(off + i * cell_size, off + j * cell_size, cell_size, cell_size)
-
-    ptr = path_list.next
-    while(ptr.next != None):
-    	ptr = ptr.next
-
-    while (ptr != None):
-        xcoor = ptr.x
-        ycoor = ptr.y
-        canvas.setFill('red')
-        canvas.drawOval(off + xcoor * cell_size + cell_size*.2, off + ycoor * cell_size+ cell_size*.2, cell_size*.6, cell_size*.6)
-        #print("path at [{} {}]".format(xcoor, ycoor))
-        ptr = ptr.parent
-
-    win.wait()
 
 
 def Manhattan(start, goal):
@@ -290,7 +223,214 @@ def final_trace(map_info, s_goal):
     return tracklist.next
 
 
-def take_action(track, maze, map_info, path):
+def take_action_F(track, maze, map_info, path):
+    global counter
+    x = track.x
+    y = track.y
+    # print("check position [{} {}]".format(x, y))
+    position = None
+    if (map_info[x][y].g != 0):
+        print("wrong start point")
+        exit(0)
+    else:
+        # keep moving until
+        while (track != None):
+            x = track.x
+            y = track.y
+            if (not map_info[x][y].isBlocked):
+                detect(map_info[x][y], maze, map_info)
+                position = track
+                path.push(position.x, position.y)
+                counter += 1
+                track = track.next
+            else:
+                break
+    # need to complete
+    return position
+
+
+def main_F():
+    global counter
+    global canvas
+    global maze
+    start = time.time()
+    # generate a random foggy map
+    # generate a information map
+    map_info = setup_info()
+
+    for i in range(size):  # Note that i ranges from 0 through 7, inclusive.
+        for j in range(size):  # So does j.
+            cell = maze[i][j]
+
+            canvas.setFill('white')
+            # draw cell_size * cell_size rectangle at point (offset_x + i * cell_size, offset_y + j * cell_size)
+            canvas.drawRect(10 + i * 10, 10 + j * 10, 10, 10)
+
+
+    counter = 0
+    # start from the begining, end at the goal stage
+    s_start = map_info[0][0]
+
+    # detect the block
+    detect(s_start, maze, map_info)
+    s_goal = map_info[size - 1][size - 1]
+    path = point(-1, -1)
+    while not (s_start.x == s_goal.x and s_start.y == s_goal.y):
+        openlist = MinHeap()
+        close_open_list = [[False for i in range(size)] for j in range(size)]
+        s_start.g = 0
+        # push the start stage information to queue
+        s_start.h = Manhattan(s_start, s_goal)
+        MinHeap.push(openlist, s_start)
+
+        # print("push point {} {}".format(s_start.x, s_start.y))
+
+        '''
+        track record the current idea path from current start goal to the final goal
+        '''
+        canvas.setFill('blue')
+        ComputePath(maze, map_info, s_goal, openlist, close_open_list)
+        track = traceback(map_info, s_goal)
+        if len(openlist) == 0:
+            print("I cannot reach the target.")
+            return
+
+        '''
+        while(ptr != None):
+            print('track is [{} {}]'.format(ptr.x, ptr.y), end=' ')
+            ptr = ptr.next
+        '''
+        s_start = take_action_F(track, maze, map_info, path)
+        #print("move to point [{} {}]".format(s_start.x, s_start.y))
+        #print("current path end is [{} {}]".format(s_start.x, s_start.y))
+    	# print("goal point is [{} {}]".format(s_goal.x, s_goal.y))
+
+    '''
+        follow the tree pointers from s_goal to s_start, use a linkedlist to record
+        the path, and then move the agent to the goal stage
+    '''
+    # final_track = final_trace(map_info, s_goal)
+    ptr = path.next
+    canvas.setFill('red')
+    while(ptr.next != None):
+    	ptr = ptr.next
+
+    while (ptr != None):
+        xcoor = ptr.x
+        ycoor = ptr.y
+        canvas.drawOval(10 + xcoor * 10 + 10*.2, 10 + ycoor * 10 + 10*.2, 10*.6, 10*.6)
+
+
+        # canvas.drawRect(off + xcoor * cell_size, off + ycoor * cell_size, cell_size, cell_size)
+        #print("path at [{} {}]".format(xcoor, ycoor))
+        ptr = ptr.parent
+    '''
+    while ptr != None:
+        print("path is [{} {}]".format(ptr.x, ptr.y), end = " ")
+        ptr = ptr.next
+    '''
+    end = time.time()
+    print("Time:" , end - start)
+    canvas.setFill('red')
+    for i in range(size):  # Note that i ranges from 0 through 7, inclusive.
+        for j in range(size):  # So does j.
+            cell = maze[i][j]
+            if cell.ifBlocked:
+                canvas.setFill('black')
+                # draw cell_size * cell_size rectangle at point (offset_x + i * cell_size, offset_y + j * cell_size)
+                canvas.drawRect(10 + i * 10, 10 + j * 10, 10, 10)
+    #draw(maze, path)
+
+    return
+
+def main_B():
+    start = time.time()
+    # generate a random foggy map
+    global maze
+    # generate a information map
+    map_info = setup_info()
+
+    counter = 0
+    # start from the begining, end at the goal stage
+    s_start = map_info[0][0]
+
+    # detect the block
+    detect(s_start, maze, map_info)
+    s_goal = map_info[size - 1][size - 1]
+    path = point(-1, -1)
+    for i in range(size):  # Note that i ranges from 0 through 7, inclusive.
+        for j in range(size):  # So does j.
+            cell = maze[i][j]
+
+            canvas.setFill('white')
+            # draw cell_size * cell_size rectangle at point (offset_x + i * cell_size, offset_y + j * cell_size)
+            canvas.drawRect(10 + i * 10, 10 + j * 10, 10, 10)
+    while not (s_start.x == s_goal.x and s_start.y == s_goal.y):
+        openlist = MinHeap()
+        close_open_list = [[False for i in range(size)] for j in range(size)]
+        s_goal.g = 0
+        s_start.search = counter
+        s_goal.search = counter
+        # push the start stage information to queue
+        s_goal.h = Manhattan(s_goal, s_start)
+        MinHeap.push(openlist, s_goal)
+
+        # print("push point {} {}".format(s_start.x, s_start.y))
+
+        '''
+        track record the current idea path from current start goal to the final goal
+        '''
+        canvas.setFill('blue')
+        ComputePath(maze, map_info, s_start, openlist, close_open_list)
+        if len(openlist) == 0:
+            print("I cannot reach the target.")
+            return
+
+        '''
+        while(ptr != None):
+            print('track is [{} {}]'.format(ptr.x, ptr.y), end=' ')
+            ptr = ptr.next
+        '''
+        s_start = take_action_B(s_start, maze, map_info, path)
+        #print("move to point [{} {}]".format(s_start.x, s_start.y))
+    	# print("current path end is [{} {}]".format(path_ptr.x, path_ptr.y))
+    	# print("goal point is [{} {}]".format(s_goal.x, s_goal.y))
+
+    '''
+        follow the tree pointers from s_goal to s_start, use a linkedlist to record
+        the path, and then move the agent to the goal stage
+    '''
+    # final_track = final_trace(map_info, s_goal)
+    canvas.setFill('red')
+    ptr = path.next
+    while(ptr.next != None):
+    	ptr = ptr.next
+
+    while (ptr != None):
+        xcoor = ptr.x
+        ycoor = ptr.y
+        canvas.drawOval(10 + xcoor * 10 + 10*.2, 10 + ycoor * 10+ 10*.2, 10*.6, 10*.6)
+        #print("path at [{} {}]".format(xcoor, ycoor))
+        ptr = ptr.parent
+    '''
+    while ptr != None:
+        print("path is [{} {}]".format(ptr.x, ptr.y), end = " ")
+        ptr = ptr.next
+    '''
+    end = time.time()
+    print("Time:" , end - start)
+
+    for i in range(size):  # Note that i ranges from 0 through 7, inclusive.
+        for j in range(size):  # So does j.
+            cell = maze[i][j]
+            if cell.ifBlocked:
+                canvas.setFill('black')
+                # draw cell_size * cell_size rectangle at point (offset_x + i * cell_size, offset_y + j * cell_size)
+                canvas.drawRect(10 + i * cell_size, 10 + j * 10, 10, 10)
+    #draw(maze, path)
+    return
+
+def take_action_B(track, maze, map_info, path):
     x = track.x
     y = track.y
     # print("check position [{} {}]".format(x, y))
@@ -309,71 +449,24 @@ def take_action(track, maze, map_info, path):
     # need to complete
     return position
 
-
-def main():
-    start = time.time()
-    # generate a random foggy map
-    maze = setup()
-    # generate a information map
-    map_info = setup_info()
-
-    counter = 0
-    # start from the begining, end at the goal stage
-    s_start = map_info[0][0]
-
-    # detect the block
-    detect(s_start, maze, map_info)
-    s_goal = map_info[size - 1][size - 1]
-    path = point(-1, -1)
-    while not (s_start.x == s_goal.x and s_start.y == s_goal.y):
-        openlist = MinHeap()
-        close_open_list = [[False for i in range(size)] for j in range(size)]
-        s_goal.g = 0
-        s_start.search = counter
-        s_goal.search = counter
-        # push the start stage information to queue
-        s_goal.h = Manhattan(s_goal, s_start)
-        MinHeap.push(openlist, s_goal)
-
-        # print("push point {} {}".format(s_start.x, s_start.y))
-
-        '''
-        track record the current idea path from current start goal to the final goal
-        '''
-        ComputePath(maze, map_info, s_start, openlist, close_open_list)
-        if len(openlist) == 0:
-            print("I cannot reach the target.")
-            return
-
-        '''
-        while(ptr != None):
-            print('track is [{} {}]'.format(ptr.x, ptr.y), end=' ')
-            ptr = ptr.next
-        '''
-        s_start = take_action(s_start, maze, map_info, path)
-        #print("move to point [{} {}]".format(s_start.x, s_start.y))
-    	# print("current path end is [{} {}]".format(path_ptr.x, path_ptr.y))
-    	# print("goal point is [{} {}]".format(s_goal.x, s_goal.y))
-
-    '''
-        follow the tree pointers from s_goal to s_start, use a linkedlist to record
-        the path, and then move the agent to the goal stage
-    '''
-    # final_track = final_trace(map_info, s_goal)
-    ptr = path.next
-    '''
-    while ptr != None:
-        print("path is [{} {}]".format(ptr.x, ptr.y), end = " ")
-        ptr = ptr.next
-    '''
-    end = time.time()
-    print("Time:" , end - start)
-    draw(maze, path)
-
-    return
-
-
 if __name__ == "__main__":
     counter = 0
-    main()
-    print("repeated backward expand node: {}".format(counter))
+    maze = setup()
+    win = GraphicsWindow(size * 10 * 1.2, size * 10 * 1.2)
+    canvas = win.canvas()
+    cell_size = 10
+    main_F()
+    print("repeated forward: {}".format(counter))
+    win.wait()
+
+
+    win = GraphicsWindow(size * 10 * 1.2, size * 10 * 1.2)
+    canvas = win.canvas()
+    main_B()
+    print("repeated backward: {}".format(counter))
+    win.wait()
+
+
+
+
+

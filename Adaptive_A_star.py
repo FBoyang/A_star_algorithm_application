@@ -57,7 +57,7 @@ or already in the open list which won't need to be modified.
 def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list, visited_list):
     xcoor = snode.x
     ycoor = snode.y
-
+    global counter
     # update right successor
 
     if (isValid(xcoor + 1, ycoor) and (not close_open_list[xcoor + 1][ycoor])):
@@ -75,6 +75,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list, visi
             else:
                 successor.h = successor.nh
             MinHeap.push(Queue, successor)
+            counter += 1
             visited_list.append(successor)
     # print("push point {} {}".format(xcoor + 1, ycoor))
 
@@ -95,6 +96,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list, visi
             else:
                 successor.h = successor.nh
             MinHeap.push(Queue, successor)
+            counter += 1
             visited_list.append(successor)
 
     # print("push point {} {}".format(xcoor - 1, ycoor))
@@ -117,6 +119,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list, visi
             else:
                 successor.h = successor.nh
             MinHeap.push(Queue, successor)
+            counter += 1
             visited_list.append(successor)
     # print("push point {} {}".format(xcoor, ycoor - 1))
 
@@ -136,6 +139,7 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list, visi
             else:
                 successor.h = successor.nh
             MinHeap.push(Queue, successor)
+            counter += 1
             visited_list.append(successor)
     # print("push point {} {}".format(xcoor, ycoor + 1))
     return
@@ -301,7 +305,7 @@ def final_trace(map_info, s_goal):
     return tracklist.next
 
 
-def take_action(track, maze, map_info, path):
+def take_action(track, maze, map_info, path): 
     x = track.x
     y = track.y
     # print("check position [{} {}]".format(x, y))
@@ -327,6 +331,7 @@ def take_action(track, maze, map_info, path):
 
 def main():
     global g_goal
+    global counter
     start = time.time()
     # generate a random foggy map
     maze = setup()
@@ -348,6 +353,7 @@ def main():
         # push the start stage information to queue
         s_start.h = s_start.nh
         MinHeap.push(openlist, s_start)
+        counter += 1
         visited_list.append(s_start)
         # print("push point {} {}".format(s_start.x, s_start.y))
 
@@ -360,7 +366,6 @@ def main():
         '''
         for i in visited_list:
             i.nh = g_goal - i.g
-
         track = traceback(map_info, s_goal)
         if len(openlist) == 0:
             print("I cannot reach the target.")
@@ -388,7 +393,7 @@ def main():
         ptr = ptr.next
     '''
     end = time.time()
-    print(end - start)
+    print("Time: ", end - start)
     draw(maze, path)
 
     return
@@ -396,4 +401,6 @@ def main():
 
 if __name__ == "__main__":
     g_goal = 0
+    counter = 0
     main()
+    print("Adaptive A* search expand node: {}".format(counter))

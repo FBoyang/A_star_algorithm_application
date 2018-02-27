@@ -53,10 +53,10 @@ if location (x, y) in close_open_list has value true, it is either in the close 
 or already in the open list which won't need to be modified.
 '''
 
-def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_list):
+def surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list):
     xcoor = snode.x
     ycoor = snode.y
-
+    global counter
     # update right successor
 
     if (isValid(xcoor + 1, ycoor) and (not close_open_list[xcoor + 1][ycoor])):
@@ -70,8 +70,8 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.x = xcoor + 1
             successor.y = ycoor
             successor.h = Manhattan(successor, s_goal)
-            successor.search = counter
             MinHeap.push(Queue, successor)
+            counter += 1
     # print("push point {} {}".format(xcoor + 1, ycoor))
 
     # update left successor
@@ -87,8 +87,8 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.x = xcoor - 1
             successor.y = ycoor
             successor.h = Manhattan(successor, s_goal)
-            successor.search = counter
             MinHeap.push(Queue, successor)
+            counter += 1
 
     # print("push point {} {}".format(xcoor - 1, ycoor))
 
@@ -106,8 +106,8 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.x = xcoor
             successor.y = ycoor - 1
             successor.h = Manhattan(successor, s_goal)
-            successor.search = counter
             MinHeap.push(Queue, successor)
+            counter += 1
     # print("push point {} {}".format(xcoor, ycoor - 1))
 
     # update upward successor
@@ -122,8 +122,8 @@ def surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_l
             successor.x = xcoor
             successor.y = ycoor + 1
             successor.h = Manhattan(successor, s_goal)
-            successor.search = counter
             MinHeap.push(Queue, successor)
+            counter += 1
     # print("push point {} {}".format(xcoor, ycoor + 1))
     return
 
@@ -139,6 +139,11 @@ def setup():
                 grid[i][j] = Cell(i, j, False, True)
             else:
                 grid[i][j] = Cell(i, j, randomization())
+            grid[89][100] = Cell(89, 100, True, False)
+            grid[89][99] = Cell(89, 99, True, False)
+            grid[89][98] = Cell(89, 98, True, False)
+            grid[89][97] = Cell(89, 97, True, False)
+
     return grid
 
 
@@ -183,7 +188,7 @@ def detect(s, maze, Mazeinfor):
 
 # Return false for unblocked, true for blocked
 def randomization():
-    temp = np.random.choice([0, 1], 1, p=[0, 1])
+    temp = np.random.choice([0, 1], 1, p=[0.2, 0.8])
     if temp[0] == 1:
         return False
     return True
@@ -236,10 +241,10 @@ def Manhattan(start, goal):
     return (abs(goal.x - start.x) + abs(goal.y - start.y))
 
 
-def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue, close_open_list):
+def ComputePath(Maze, Mazeinfor, s_goal, Queue, close_open_list):
+
     # check whether queue is empty
     while (len(Queue) > 0):
-        # print(len(Queue))
         '''
         for i in range(len(Queue)):
             n = Queue._MinHeap__heap[i]
@@ -255,7 +260,7 @@ def ComputePath(Maze, Mazeinfor, counter, s_goal, Queue, close_open_list):
         if (snode.x == s_goal.x and snode.y == s_goal.y):
             return
         # update s's successors, executing step 5 to 13
-        surround_update(Maze, Mazeinfor, snode, s_goal, counter, Queue, close_open_list)
+        surround_update(Maze, Mazeinfor, snode, s_goal, Queue, close_open_list)
 
 
 def traceback(map_info, s_goal):
@@ -291,6 +296,7 @@ def final_trace(map_info, s_goal):
 
 
 def take_action(track, maze, map_info, path):
+    global counter
     x = track.x
     y = track.y
     # print("check position [{} {}]".format(x, y))
@@ -307,6 +313,7 @@ def take_action(track, maze, map_info, path):
                 detect(map_info[x][y], maze, map_info)
                 position = track
                 path.push(position.x, position.y)
+                counter += 1
                 track = track.next
             else:
                 break
@@ -315,6 +322,7 @@ def take_action(track, maze, map_info, path):
 
 
 def main():
+    global counter
     start = time.time()
     # generate a random foggy map
     maze = setup()
@@ -332,10 +340,7 @@ def main():
     while not (s_start.x == s_goal.x and s_start.y == s_goal.y):
         openlist = MinHeap()
         close_open_list = [[False for i in range(size)] for j in range(size)]
-        counter += 1
         s_start.g = 0
-        s_start.search = counter
-        s_goal.search = counter
         # push the start stage information to queue
         s_start.h = Manhattan(s_start, s_goal)
         MinHeap.push(openlist, s_start)
@@ -345,7 +350,7 @@ def main():
         '''
         track record the current idea path from current start goal to the final goal
         '''
-        ComputePath(maze, map_info, counter, s_goal, openlist, close_open_list)
+        ComputePath(maze, map_info, s_goal, openlist, close_open_list)
         track = traceback(map_info, s_goal)
         if len(openlist) == 0:
             print("I cannot reach the target.")
@@ -380,4 +385,6 @@ def main():
 
 
 if __name__ == "__main__":
+    counter = 0
     main()
+    print("repeated forward expand node: {}".format(counter))
