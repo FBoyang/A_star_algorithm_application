@@ -3,6 +3,7 @@ from ezgraphics import GraphicsWindow
 import sys
 from class_infor import *
 import time
+import gc
 size = 101
 
 
@@ -269,7 +270,12 @@ def traceback(map_info, s_goal):
     # while ptr hasn't reach the start node
     while (ptr.g != 0):
         tracklist.addFront(ptr)
-        ptr = ptr.parent
+        if(ptr.parent == None):
+            print(ptr.x, ptr.y)
+            print("can't get path")
+            break
+        else:
+            ptr = ptr.parent
 
     tracklist.addFront(ptr)
     return tracklist.next
@@ -379,12 +385,14 @@ def main():
     '''
     end = time.time()
     print("Time:" , end - start)
-    draw(maze, path)
+    #draw(maze, path)
 
     return
 
 
 if __name__ == "__main__":
     counter = 0
-    main()
-    print("repeated forward expand node: {}".format(counter))
+    for i in range(0, 50):
+        main()
+        gc.collect()
+        print("repeated forward expand node: {}".format(counter))
